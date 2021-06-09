@@ -1,0 +1,501 @@
+---
+title: "Monopsonistic labor markets and workplace harassment"
+subtitle: "Project Presentation"
+author: "[Javier Fernández](https://jfernandez.netlify.app)"
+institute: "[Centro de Economía y Política Regional](https://cepr.uai.cl/ayudante/javier-fernandez/)"
+date: "15/06/2021"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: ["default", "custom.css"]
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: "macros.js"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,message = F,warning = F)
+
+rm(list=ls())
+library(data.table)
+library(plotly)
+library(highcharter)
+
+
+path<-"D:/Dropbox/Javier Fernandez/Tesis/01 Datos/"
+
+
+effdea<-fread(paste0(path,"basefinal_effdeaSW.csv"),encoding = "UTF-8")
+
+```
+
+## About me 
+
+
+- BSc. Economics & MSc. Economics - Universidad Adolfo Ibañez
+
+--
+
+- Administrative Staff - Center of Economics and Regional Policy
+	- IT support
+	- Support and guidance of internship students, junior RA, and thesis students
+	- Activities Organization (Workshop- Seminars - Dissemination activities)
+	- Teaching in Programming Schools
+
+--
+	
+- Part-time Lecturer - Business School, Adolfo Ibañez University
+	- Microeconomics I & II (3 SEM)
+	- Introduction to Data Science in R (3 SEM)
+
+--
+
+- RA -  Center of Economics and Regional Policy 
+	- Input-output approach to study regional effects in key industries in Chile
+	- The effect of Monopsony Market power of the firms in Local labor markets in Chile
+	- Gender Wage Gap and the effect in the growth of Chile
+---
+
+class: inverse, center, middle
+
+# Master dissertation - Local governments efficiency providing education: The Chilean case
+
+---
+
+## Motivation
+
+```{r}
+effvio<-effdea[,.(score=mean(simcemun),expenditure=mean(gperctot)),by=.(codmun,region)]
+
+
+fig1 <- effvio %>%
+  plot_ly(
+    x = ~region,
+    y = ~score,
+    split = ~region,
+    type = 'violin',
+    box = list(
+      visible = T
+    ),
+    meanline = list(
+      visible = T
+    )
+  ) 
+
+m <- list(
+  l = 50,
+  r = 50,
+  b = 100,
+  t = 100,
+  pad = 4
+)
+
+fig1 <- fig1 %>%
+  layout(autosize = F, width = 800, height = 600, margin = m,
+         title = "Fig 1. Distribution of the SIMCE scores by municipalities, all years average",
+    xaxis = list(
+      title = "Region"
+    ),
+    yaxis = list(
+      title = "SIMCE score 4th grade",
+      zeroline = F
+    )
+  )
+
+
+fig1
+```
+
+---
+## Research Questions
+
+
+.llittle[
+- Which is the proper method to estimate the efficiency in the educational provision of local governments in Chile?]
+
+--
+
+.mbig[
+- Which are the factors that determine the levels of efficiency
+in educational spending of the local governments in Chile?
+
+]
+---
+## Why study the efficiency? 
+
+
+.mmbig[
+- Add economic structure about the production process
+]
+--
+.mmbig[
+- Allow comparing between DMUs which are in differents start points
+]
+--
+
+.mmbig[
+- Add economic intuition 
+]
+
+---
+## Data Envelopment Analysis (DEA)
+
+
+.mmbig[
+- Non-parametrical method to estimate the efficiency
+]
+--
+.mmbig[
+- Allow us to study the efficiency from an empirical perspective
+]
+--
+.mmbig[
+- Resolution of linear optimization
+]
+--
+.mmbig[
+- Few assumptions about the production process
+]
+
+
+---
+## DEA method
+
+
+```{r}
+
+dataf <- data.table(Input=c(2,2,3,3,4.5,4.5,6,6,8),Output=c(0,1,1,4,4,4.5,4.5,6,6), frontier="FDH")
+datad <- data.table(Input=c(2,2,3,4.5,6,8),Output=c(0,1,4,4.5,6,6), frontier="DEA - VRS")
+datadct <- data.table(Input=c(0,6,8),Output=c(0,6,8), frontier="DEA - CRS")
+
+datapoint <- data.table(Input=c(4,5,7,4.5,6),Output=c(2,3,1,2,5))
+
+data<-rbind(dataf,datad)
+data<-rbind(data,datadct)
+
+
+
+fig <-data %>% hchart('line', hcaes(x = Input, y = Output, group = frontier)) 
+
+fig %>% 
+  hc_add_series(datapoint, "scatter", hcaes(x = Input, y = Output),name="Points") %>%
+  hc_title(text = "Fig 2. Example: DEA types of frontier")
+
+
+```
+
+---
+
+## DEA specification
+
+
+.mmbig[
+- Inputs
+	- Expenditure in educational staff per enrolled student 
+	- Expenditure in the logistic and infrastructure in the educational area per student
+]
+--
+.mmbig[
+- Output
+	- Average score of the SIMCE test of fourth-degree students of public education (Standardized Test)
+]
+---
+## Second Stage efficiency
+
+- Following Simar & Wilson (2011) and we can study the influences of "environment" factors external to the local governments' control
+
+--
+\begin{equation}
+\theta _{i}= \beta _{0}+ \sum _{l=1}^{L} \beta _{l}Z_{li}+ \delta _{i}
+\end{equation}
+--
+
+The vector Z is composed of variables in the following three dimensions:
+
+- Socio-demographic variables: Average income, population categories, and percentage of the rural enrolled student
+
+- Education context variables: Percentage of teachers of public schools with high performance in the teacher evaluation, percentage of absence to SIMCE test, percentage of class attendance, and percentage of enrolled students in the private schools with a voucher system
+
+- Spatial variables: Commutation inflows and outflow by school attendance reasons and connectivity index
+
+---
+## Data
+
+- Unbalanced Panel data at municipal level from 2005 to 2016
+
+--
+
+- 342 Municipalities were included with 96% of coverage in the years available in the sample
+
+--
+
+- The data was extracted from different sources of the Chilean government: 
+	- National system of municipal information (SINIM)
+	- Ministry of education
+		- Students' Registry of Chile
+		-  Teachers Evaluation
+		-  SIMCE results
+---
+
+## Main results
+
+- The average local government efficiency shows temporal stability
+
+--
+
+- The efficiency is more stable in the municipalities with a lower efficiency level
+
+--
+
+- There is a regional/spatial pattern in the efficiency
+
+--
+
+- There are positive effects for economies of a scale, which could be up to 26% on average.
+
+--
+
+- The low connectivity could explain from 2.4% to 36.7% of the inefficiency for the ten municipalities with the lowest efficiencies.
+
+---
+
+class: inverse, center, middle
+
+# PhD Project: Monopsonistic labor markets and workplace harassment
+
+---
+## Introduction
+
+- The vision of the job has changed from workers' and firms' perspectives. 
+
+--
+
+- Workplace harassment may have effects on workers health (Pryor & Louise, 2003; Rospenda et al., 2005 ), productivity, and quality of work (Weziak-Białowolska et al., 2020) 
+
+--
+
+- This project aims to:
+	- Understand the causes of workplace harassment and its relation with labor market condition
+	- Comprehend how and how much the monopsony power of the firm affects the immigrant workers
+	- Generate a tool to predict workplace harassment in firms
+
+---
+
+## Data
+
+The information comes from three different sources:
+
+--
+
+- The administrative data of the unemployment insurance (AFC)
+	- Monthly information about almost all formal employees in Chile from 2012 to 2021
+	- Variables such as income, education, age, sex, city of residence, nationality, and firm
+	- Needed to calculate the firm's monopsony power
+
+--
+	
+- The firm's infringement records provided by the ministry of labor (DT)
+	- It will be used to build the measure of workplace harassment
+	- Information on all reported firms' infringement against employees from 2016 to 2021
+	- The reported infringements range from unpaid pension contributions to anti-union practices
+	
+--
+
+- Information related to economic aspects of the firms from the Tax Revenue Office (SII)
+  - Complete economic information about the market environment of firms, such as the size of the market and level of competition from 2005 to 2019 
+
+
+
+---
+class: inverse, center, middle
+
+### Chapter 1: Exploration of the causes of workplace harassment: the labor market effects
+
+---
+
+## Motivation
+
+- Previous literature has studied the causes of workplace harassment from human resources perspective (Appelbaum et al.,2012)
+
+--
+
+- Hersch (2011;2018) shows that workplace harassment can lead to wage differentials and other economic impacts
+
+--
+
+- Up to now, the economic literature has only focused on the consequences of workplace harassment without considering the effect of labor market structure and conditions
+
+--
+
+- Manning (2020) indicates that labor markets have important
+elements of monopsony power, and it should be incorporated when modeling the dynamics in the relationships between employer and employees
+
+--
+
+- Webber (2016) shows how differences in monopsony power of the firms between men and women are a powerful explanation of the gender pay gap among them 
+
+--
+
+- Therefore, It is intuitive to think that the firm's monopsony power is also related to the occurrence and persistence of workplace harassment
+
+--
+
+- The main contribution of this research is to explore the causes of workplace harassment. In particular, the role of monopsony market power at the firm level 
+
+
+
+---
+
+## Model
+
+- Following the approach used by Webber (2015), it is possible to estimate E, a measure of labor-supply elasticity (firm's monopsony market power) faced by each firm in each period using job spells of workers in a firm and data about its duration, wages, and classical control variables.  Given this measure, the following model at the firm level is proposed:
+
+--
+
+\begin{equation}
+    WorkplaceHarassment_{jt}=\beta \varepsilon_{jt}+\gamma X_{jt}+\delta Y_{j}+u_{jt}
+\end{equation}
+
+--
+
+
+- Where:
+  - The dependent variable is the ratio between the number of cases of workplace harassment and the total number of employees in firm j in period t 
+  - $\epsilon_j$ is the measure of monopsony power of the firm
+  - $X_{jt}$ is a vector of firm characteristics that may vary in time 
+  - $Y_j$ is a fixed-effects vector for firms 
+  - $U_{jt}$ is the error term
+
+
+
+---
+
+class: inverse, center, middle
+
+### Chapter 2: The effects of monopsonistic labor markets on the workplace harassment of immigrant workers
+
+---
+
+## Motivation
+
+- In recent years, immigration to Chile has increased almost three times and has been driven by people with lower per capita income levels (Aldunate et al., 2019)
+
+--
+
+- The restrictive immigrant policies and the characteristics of this migration inflows promotes discrimination in some dimension of the labor markets (Feline & Vera, 2021)
+
+--
+
+- The literature has studied wage discrimination on foreigners (Hirsch & Jahn, 2015), the effect of immigration on the native wage structure(Manning, 2020)
+
+--
+
+- This work intends to make two contributions to the literature:
+	- Study the relative labor-supply elasticity of immigrants with respect to the native workers in Chile
+	- Explore the effects of the firms' monopsony power on outcomes related to welfare and health at work
+	
+	
+---
+
+## Model
+
+- We replicate the econometric strategy described in chapter one for each, but splitting the data into two samples: immigrant and native workers
+
+--
+
+\begin{equation}
+    W_{jt}=\beta \varepsilon_{jt}+\gamma X_{jt}+\delta Y_{j}+u_{jt}
+\end{equation}
+
+
+--
+
+- Where
+  - $W_{jt}$ is the rate of injuries and accidents, sick leave rates, and workplace harassment ratio presented in chapter one within the firms 
+  - $X_{jt}$ and $Y_{j}$ are the same introduced in chapter one but are differentiated by natives and immigrant workers
+  - $U_{jt}$ is the error term
+  
+--
+
+- Moreover, to measure the importance of discrimination as a driver of the differential working conditions between native and immigrant workers, I will apply the decomposition proposed by Oaxaca(1973)
+
+---
+
+class: inverse, center, middle
+
+### Chapter 3: The workplace harassment predictive risk model
+
+---
+
+## Motivation
+
+- Predictive risk models (PRM) are powerful tools that support institutions' decision-making processes
+
+--
+
+- Many studies discussing the benefits and limitations of PRM (Panattoni et al., 2011; Caplan et al., 2011, Walsh et al., 2020) 
+
+--
+
+- An emblematic case is the Allegheny Family Screening Tool (Vaithianathan et al., 2017)
+
+--
+
+- The firms with high monopsony market power pay less than those with low levels of it. Therefore, probably in the firms with high monopsony market power, the workers denounce less
+
+--
+
+- This work's contribution is to propose a PRM allowing to measure the risk of workplace harassment. This will improve the supervision mechanism of firms and public institutions
+
+---
+
+### Methodology
+
+Following the procedure proposed by Vaithianathan et al.(2017), we have to apply these two steps:
+
+- Variable Selection
+  - Estimate probit with an occurrence of workplace harassment as a dependent variable and independent variables all available in the data
+  - Cutoff criterion 1: 1.6 t-ratio
+  - Estimate probit in a random sample of 30%  with pre-selected variables. Repeat the process 50 times
+  - Cutoff criterion 2: 2.2 t-ratio in all repetitions
+
+--
+
+- Evaluate Model Performance
+	- Test the predictive power of the model
+	- Split the sample in 70% to train and 30% to test the model
+	- Evaluate this procedure in ordinary probit and boosted probit
+	- Re-evaluate with another cross-validation method: k-folds 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
